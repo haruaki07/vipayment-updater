@@ -10,37 +10,51 @@ var (
 	password string
 )
 
-func init() {
+func main() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Fatalf("ERROR: %v\n", r)
+		}
+	}()
+
+	parseFlags()
+
+	vp := NewWithCredentials(username, password)
+
+	err := vp.Login()
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		err := vp.Logout()
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	ip, err := GetMyPublicIP()
+	if err != nil {
+		panic(err)
+	}
+
+	ipAddress := []string{ip}
+	err = vp.UpdateIPWhitelist(ipAddress)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func parseFlags() {
 	flag.StringVar(&username, "user", "", "VIPayment account username/email/phone")
 	flag.StringVar(&password, "pass", "", "VIPayment account password")
 
 	flag.Parse()
 
 	if username == "" {
-		log.Panicln("Missing required parameter: -user")
+		panic("Missing required parameter: -user")
 	}
 
 	if password == "" {
-		log.Panicln("Missing required parameter: -pass")
-	}
-}
-
-func main() {
-	vp := NewWithCredentials(username, password)
-
-	err := vp.Login()
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	ip, err := GetMyPublicIP()
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	ipAddress := []string{ip}
-	err = vp.UpdateIPWhitelist(ipAddress)
-	if err != nil {
-		log.Fatalln(err)
+		panic("Missing required parameter: -pass")
 	}
 }
